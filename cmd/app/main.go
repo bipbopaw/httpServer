@@ -19,7 +19,7 @@ func main() {
 		Handler: router,
 	}
 
-	log.Panicln("server started on :8080")
+	log.Println("server started on :8080")
 
 	err := server.ListenAndServe()
 	if err != nil {
