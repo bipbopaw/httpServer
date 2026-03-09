@@ -2,9 +2,9 @@
 package repository
 
 import (
+	"calendar-notes-api/internal/model"
 	"context"
 	"errors"
-	"httpServer/internal/model"
 	"sync"
 )
 

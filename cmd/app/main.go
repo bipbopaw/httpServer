@@ -1,9 +1,9 @@
 package main
 
 import (
-	httpapi "httpServer/internal/http"
-	"httpServer/internal/repository"
-	"httpServer/internal/service"
+	httpapi "calendar-notes-api/internal/http"
+	"calendar-notes-api/internal/repository"
+	"calendar-notes-api/internal/service"
 	"log"
 	"net/http"
 )

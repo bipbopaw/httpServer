@@ -2,9 +2,9 @@
 package service
 
 import (
+	"calendar-notes-api/internal/model"
+	"calendar-notes-api/internal/repository"
 	"context"
-	"httpServer/internal/model"
-	"httpServer/internal/repository"
 	"time"
 
 	"github.com/google/uuid"

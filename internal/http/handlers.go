@@ -2,8 +2,8 @@
 package http
 
 import (
+	"calendar-notes-api/internal/service"
 	"encoding/json"
-	"httpServer/internal/service"
 	"net/http"
 	"time"
 )
