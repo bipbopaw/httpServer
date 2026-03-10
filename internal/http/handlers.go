@@ -6,6 +6,7 @@ import (
 	"calendar-notes-api/internal/service"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -40,15 +41,30 @@ func (h *Handler) CreateNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.Title == "" || strings.TrimSpace(req.Title) == "" {
+		http.Error(w, "title cannot be empty", http.StatusBadRequest)
+		return
+	}
+
+	if req.Description == "" || strings.TrimSpace(req.Description) == "" {
+		http.Error(w, "description cannot be empty", http.StatusBadRequest)
+		return
+	}
+
 	eventTime, err := time.Parse(time.RFC3339, req.EventTime)
 	if err != nil {
-		http.Error(w, "invalid event_time", http.StatusBadRequest)
+		http.Error(w, "invalid event_time format (use RFC3339)", http.StatusBadRequest)
+		return
+	}
+
+	if eventTime.Before(time.Now()) {
+		http.Error(w, "event_time cannot be in the past", http.StatusBadRequest)
 		return
 	}
 
 	notifyBefore, err := time.ParseDuration(req.NotifyBefore)
 	if err != nil {
-		http.Error(w, "invalid notify_before", http.StatusBadRequest)
+		http.Error(w, "invalid notify_before format (use duration like 1h, 30m, 1h30m)", http.StatusBadRequest)
 		return
 	}
 
@@ -65,6 +81,7 @@ func (h *Handler) CreateNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	err = json.NewEncoder(w).Encode(note)
 	if err != nil {
@@ -80,7 +97,7 @@ func (h *Handler) ListNotes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Tyoe", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 
 	if err := json.NewEncoder(w).Encode(notes); err != nil {
 		http.Error(w, "failed to encode response", http.StatusInternalServerError)
@@ -96,7 +113,7 @@ func (h *Handler) GetNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Tyoe", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 
 	if err := json.NewEncoder(w).Encode(note); err != nil {
 		http.Error(w, "failed to encode response", http.StatusInternalServerError)
@@ -112,6 +129,7 @@ func (h *Handler) DeleteNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -126,15 +144,36 @@ func (h *Handler) UpdateNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.Title == "" || strings.TrimSpace(req.Title) == "" {
+		http.Error(w, "title cannot be empty", http.StatusBadRequest)
+		return
+	}
+
+	if req.Description == "" || strings.TrimSpace(req.Description) == "" {
+		http.Error(w, "description cannot be empty", http.StatusBadRequest)
+		return
+	}
+
 	eventTime, err := time.Parse(time.RFC3339, req.EventTime)
 	if err != nil {
-		http.Error(w, "invalid event_time", http.StatusBadRequest)
+		http.Error(w, "invalid event_time format (use RFC3339)", http.StatusBadRequest)
+		return
+	}
+
+	if eventTime.Before(time.Now()) {
+		http.Error(w, "event_time cannot be in the past", http.StatusBadRequest)
 		return
 	}
 
 	notifyBefore, err := time.ParseDuration(req.NotifyBefore)
 	if err != nil {
-		http.Error(w, "invalid notify_before", http.StatusBadRequest)
+		http.Error(w, "invalid notify_before format (use duration like 1h, 30m, 1h30m)", http.StatusBadRequest)
+		return
+	}
+
+	oldNote, err := h.service.GetNote(r.Context(), id)
+	if err != nil {
+		http.Error(w, "note not found", http.StatusNotFound)
 		return
 	}
 
@@ -144,6 +183,8 @@ func (h *Handler) UpdateNote(w http.ResponseWriter, r *http.Request) {
 		Description:  req.Description,
 		EventTime:    eventTime,
 		NotifyBefore: notifyBefore,
+		UpdatedAt:    time.Now(),
+		CreatedAt:    oldNote.CreatedAt,
 	}
 
 	updatedNote, err := h.service.UpdateNote(r.Context(), note)
